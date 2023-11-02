@@ -9,6 +9,8 @@ from collections import defaultdict
 from itertools import combinations
 from collections import Counter
 from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import association_rules
+from mlxtend.frequent_patterns import apriori
 from zipfile import ZipFile
 import os
 
@@ -197,3 +199,22 @@ te = TransactionEncoder()
 te_ary = te.fit(transactions).transform(transactions)
 df_one_hot = pd.DataFrame(te_ary, columns=te.columns_)
 
+# Apply the Apriori algorithm to find frequent itemsets
+frequent_itemsets = apriori(df_one_hot, min_support=0.01, use_colnames=True)
+
+# Generate association rules from the frequent itemsets
+rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.5)
+
+# Analysing the results so far
+# Sort by the condifence and lift
+rules_sorted = rules.sort_values(['confidence', 'lift'], ascending=[False, False])
+
+# Filer rules to only show confidence >= 0.5, lift >= 1.2.
+filtered_rules = rules[(rules['confidence'] >= 0.5) & (rules['lift'] >= 1.2)]
+
+# Visializing the output of the result
+plt.scatter(rules['support'], rules['confidence'], alpha=0.5)
+plt.xlabel('Support')
+plt.ylabel('Confidence')
+plt.title('Support vs Confidence')
+plt.show()
