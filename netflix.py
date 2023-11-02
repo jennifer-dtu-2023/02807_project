@@ -8,8 +8,10 @@ import networkx as nx
 from collections import defaultdict
 from itertools import combinations
 from collections import Counter
+from mlxtend.preprocessing import TransactionEncoder
 from zipfile import ZipFile
 import os
+
 
 # used csv files, linking it with their source zip files
 csv_to_zip_source = {
@@ -186,4 +188,12 @@ data = {"Movie Names": top_20_movie_names, "Degree": degree_values}
 df_top_20 = pd.DataFrame(data)
 
 print(df_top_20)
+
+# 2023-11-02 Jennifer W5-methods.
+transactions = df_ratings.groupby('User_ID')['Movie_ID'].apply(list).tolist()
+
+# Use TransactionEncoder to transform the list of transactions into a one-hot encoded format
+te = TransactionEncoder()
+te_ary = te.fit(transactions).transform(transactions)
+df_one_hot = pd.DataFrame(te_ary, columns=te.columns_)
 
