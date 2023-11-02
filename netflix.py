@@ -8,9 +8,15 @@ import networkx as nx
 from collections import defaultdict
 from itertools import combinations
 from collections import Counter
+from scipy.sparse import csr_matrix
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.impute import SimpleImputer
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import association_rules
 from mlxtend.frequent_patterns import apriori
+from mlxtend.frequent_patterns import fpgrowth
 from zipfile import ZipFile
 import os
 
@@ -134,8 +140,6 @@ plt.show()
 # ### Initial data transformation and graph analysis as a foundation for methods in W7 (Mining Social-Network Graphs/Betweeness Centrality)
 
 # Add weighted edge based on the number of common raters
-
-
 # Sample a smaller fraction for faster processing
 df_ratings_sample = df_ratings.sample(frac=0.01)
 
@@ -191,30 +195,35 @@ df_top_20 = pd.DataFrame(data)
 
 print(df_top_20)
 
-# 2023-11-02 Jennifer W5-methods.
-transactions = df_ratings.groupby('User_ID')['Movie_ID'].apply(list).tolist()
+# 2023-11-03 jennifer methods from W5.
+# Preparing the data to be a managable size for the Apriori algorithm:
+# Sampling based on users with the highest levels of activity, rather than the popularity of the movies.
 
-# Use TransactionEncoder to transform the list of transactions into a one-hot encoded format
-te = TransactionEncoder()
-te_ary = te.fit(transactions).transform(transactions)
-df_one_hot = pd.DataFrame(te_ary, columns=te.columns_)
+# 1. Identify Active Users
+# Considering the top 200 top users
+top_users = df_ratings['User_ID'].value_counts().head(200).index 
 
-# Apply the Apriori algorithm to find frequent itemsets
-frequent_itemsets = apriori(df_one_hot, min_support=0.01, use_colnames=True)
+# 2. Sample Ratings of Active Users
+sampled_df = df_ratings[df_ratings['User_ID'].isin(top_users)]
 
-# Generate association rules from the frequent itemsets
-rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.5)
+# 3. Transform Data
+# Convert the data to a user-item matrix format
+movie_matrix = sampled_df.pivot_table(index='User_ID', columns='Movie_ID', values='Rating', aggfunc='size', fill_value=0)
 
-# Analysing the results so far
-# Sort by the condifence and lift
-rules_sorted = rules.sort_values(['confidence', 'lift'], ascending=[False, False])
+# Reduce the dimensions by filtering out movies rated by few users (let's assume threshold = 10 as an example)
+threshold = 10
+movie_matrix = movie_matrix.loc[:, (movie_matrix.sum(axis=0) > threshold)]
 
-# Filer rules to only show confidence >= 0.5, lift >= 1.2.
-filtered_rules = rules[(rules['confidence'] >= 0.5) & (rules['lift'] >= 1.2)]
+# Convert into a binary matrix: watched or not
+movie_matrix = (movie_matrix > 0).astype(bool)
 
-# Visializing the output of the result
-plt.scatter(rules['support'], rules['confidence'], alpha=0.5)
-plt.xlabel('Support')
-plt.ylabel('Confidence')
-plt.title('Support vs Confidence')
-plt.show()
+# 4. Apply Apriori
+
+# Find frequent itemsets using the binary matrix
+frequent_itemsets = apriori(movie_matrix, min_support=0.1, max_len=2, use_colnames=True)
+
+# Generate association rules
+rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+
+# Display the rules
+print(rules)
