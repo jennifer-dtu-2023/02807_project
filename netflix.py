@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,12 +10,6 @@ from itertools import combinations
 from collections import Counter
 from zipfile import ZipFile
 import os
-#import requests
-#import re
-
-
-# In[ ]:
-
 
 # used csv files, linking it with their source zip files
 csv_to_zip_source = {
@@ -51,10 +42,6 @@ for csv_file_name in csv_file_names:
         print(f"'{data_dir}/{csv_file_name}' exists ✅")
     print("---")
 
-
-# In[3]:
-
-
 movies = pd.read_csv(f"{data_dir}/Netflix_Dataset_Movie.csv")
 ratings = pd.read_csv(f"{data_dir}/Netflix_Dataset_Rating.csv")
 credits = pd.read_csv(f"{data_dir}/tmdb_5000_credits.csv")
@@ -62,32 +49,17 @@ tmdb_movies = pd.read_csv(f"{data_dir}/tmdb_5000_movies.csv")
 movies
 
 
-# In[4]:
-
-
 ratings
-
-
-# In[5]:
 
 
 credits
 
 
-# In[6]:
-
-
 tmdb_movies
-
-
-# In[7]:
 
 
 df_movies = movies[movies.Name.isin(credits.title)]
 df_movies
-
-
-# In[8]:
 
 
 df_ratings = ratings[ratings.Movie_ID.isin(df_movies.Movie_ID)]
@@ -101,8 +73,6 @@ df_ratings
 # For df_rating: Finding out these values for the Rating column.
 # 
 # For df_movies: Finding out thhe distribution of movies across years. This will to contexualise the ratings to help understand viewer taste and perhaps how rating behaviour changes over time/movie release time.
-
-# In[9]:
 
 
 # For df_ratings
@@ -120,9 +90,6 @@ std_year = df_movies['Year'].std()
 # - Using a histogram for the Rating column of df_ratings to see the frequency of each rating.
 # - Using a histogram on the year column of df_movies to see the number of movies released year year, only including the movies that have been rated.
 # - Using scatter plots to visualise the relationships between release year and average rating, as an example.
-
-# In[10]:
-
 
 # Merge the dataframes on 'Movie_ID'
 df_merged = pd.merge(df_movies, df_ratings, on='Movie_ID')
@@ -163,8 +130,6 @@ plt.show()
 # ### Initial data transformation and graph analysis as a foundation for methods in W7 (Mining Social-Network Graphs/Betweeness Centrality)
 
 # Add weighted edge based on the number of common raters
-
-# In[11]:
 
 
 # Sample a smaller fraction for faster processing
