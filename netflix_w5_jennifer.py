@@ -27,10 +27,10 @@ import os
 
 # used csv files, linking it with their source zip files
 csv_to_zip_source = {
-    "Netflix_Dataset_Movie.csv": "zip_sources/Netflix_Dataset_Movie.csv.zip",
-    "Netflix_Dataset_Rating.csv": "zip_sources/Netflix_Dataset_Rating.csv.zip",
-    "tmdb_5000_credits.csv": "zip_sources/tmdb.zip",
-    "tmdb_5000_movies.csv": "zip_sources/tmdb.zip"
+    "Netflix_Dataset_Movie.csv": "02807_project/zip_sources/Netflix_Dataset_Movie.csv.zip",
+    "Netflix_Dataset_Rating.csv": "02807_project/zip_sources/Netflix_Dataset_Rating.csv.zip",
+    "tmdb_5000_credits.csv": "02807_project/zip_sources/tmdb.zip",
+    "tmdb_5000_movies.csv": "02807_project/zip_sources/tmdb.zip"
 }
 
 csv_file_names = list(csv_to_zip_source.keys())
@@ -229,8 +229,23 @@ frequent_itemsets = apriori(movie_matrix, min_support=0.1, max_len=2, use_colnam
 # Generate association rules
 rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
 
-# Display the rules
-print(rules)
+# Considering rules with high 'lift' and 'confidence', for simplicity.
+strong_rules = rules[(rules['lift'] > 1.2) & (rules['confidence'] > 0.5)]
+
+# Create the associations dictionary
+# Extract the associations from the rules
+associations = {}
+for index, rule in strong_rules.iterrows():
+    genre = list(rule['antecedents'])[0]
+    associated_genre = list(rule['consequents'])[0]
+    if genre not in associations:
+        associations[genre] = [associated_genre]
+    else:
+        associations[genre].append(associated_genre)
+
+# print(associations)
+# each genre was associated with several other genres.
+# suggests strong patterns of co-watching. 
 
 # Understand viewer preferences to guide content acquisition or production
 # Integrate data by merging tmbd datasets.
@@ -320,6 +335,7 @@ def recommend_movie(title, num_recommendations=5):
     return merged_df['title_x'].iloc[top_movies_idx]
 
 recommendations = recommend_movie("Inception")
+print("1. Recommendations for 'Inception' using basic similarity:")
 print(recommendations)
 
 # More transpatent use of the star_power feature
@@ -342,4 +358,56 @@ def recommend_movie_weighted(title, star_power_weight, num_recommendations=5):
 # Allow user to influence the recommendation by star_power
 star_power_weight = float(input("Enter weight for star power influence (e.g., 0.5 for 50% more influence): "))
 weighted_recommendations = recommend_movie_weighted("Inception", star_power_weight)
+print("2. Weighted recommendations for 'Inception':")
 print(weighted_recommendations)
+
+# Enhanced recommentation with apriori integrated
+# helper function to extract movie name
+def extract_genres(genre_list):
+    if not isinstance(genre_list, list):
+        return []
+    return [genre_dict["name"] for genre_dict in genre_list if isinstance(genre_dict, dict) and "name" in genre_dict]
+
+def create_genre_id_name_mapping():
+    """Create a dictionary to map genre IDs to names using the 'genres' column."""
+    genre_id_name_mapping = {}
+    for genre_list in merged_df['genres']:
+        for genre in genre_list:
+            if isinstance(genre, dict) and 'id' in genre and 'name' in genre:
+                genre_id_name_mapping[genre['id']] = genre['name']
+    return genre_id_name_mapping
+
+def apriori_recommendations(movie_genre):
+    """Recommend movies based on Apriori genre associations."""
+    associated_genres = associations.get(movie_genre, [])
+    print(f"Associated genres for {movie_genre}: {associated_genres}")  # Diagnostic print
+    
+    # Added diagnostic print to see what genres are in associated_genres
+    print(f"Genres to be matched: {associated_genres}")
+    
+    def genre_matches(genres_of_movie):
+        associated_genres = associations.get(movie_genre, [])
+        return any(genre in genres_of_movie for genre in associated_genres)
+
+    recommended_movies = merged_df[merged_df['genres'].apply(genre_matches)]
+    return recommended_movies['title_x']
+
+# example use case:
+print("3. Apriori genre-based recommendations for 'Action':")
+print(apriori_recommendations("Action"))
+
+def enhanced_recommendation(title, star_power_weight, num_recommendations=5):
+    star_power_recommendations = recommend_movie_weighted(title, star_power_weight, num_recommendations)
+    
+    movie_genre = merged_df[merged_df['title_x'] == title]['genres'].iloc[0]
+    if movie_genre:
+        apriori_recs = apriori_recommendations(movie_genre[0])  # Using the primary genre for simplicity
+        # Concatenate and return combined recommendations, while ensuring no duplicates
+        combined_recommendations = pd.concat([star_power_recommendations, apriori_recs]).drop_duplicates().head(num_recommendations)
+        return combined_recommendations
+    else:
+        return star_power_recommendations
+
+# example use case:
+print("4. Enhanced recommendations for 'Die Hard' with star power influence of 0.7:")
+print(enhanced_recommendation("Die Hard", 0.7, 10))
