@@ -13,11 +13,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.impute import SimpleImputer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
+from sklearn.feature_extraction.text import CountVectorizer
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import association_rules
 from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import fpgrowth
 from zipfile import ZipFile
+import warnings
 import os
 
 
@@ -227,3 +231,115 @@ rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
 
 # Display the rules
 print(rules)
+
+# Understand viewer preferences to guide content acquisition or production
+# Integrate data by merging tmbd datasets.
+merged_df = pd.merge(tmdb_movies, credits, left_on='id', right_on='movie_id')
+# checking the merged dataframe
+print(merged_df.head()) 
+
+# Extract genre names into a list of dictionaries
+merged_df['genres'] = merged_df['genres'].apply(lambda x: [i['name'] for i in eval(x)])
+# checking the genre transformation
+print(merged_df['genres'].head())
+
+# Extract top 3 cast members
+merged_df['cast'] = merged_df['cast'].apply(lambda x: [i['name'] for i in eval(x)][:3])
+# checking the cast transformation
+print(merged_df['cast'].head())
+
+# Extract production company names
+merged_df['production_companies'] = merged_df['production_companies'].apply(lambda x: [i['name'] for i in eval(x)])
+# checking the production company transformation
+print(merged_df['production_companies'].head())
+
+# Creating a 'Star Power' metrix to quantify the influence or popularity of an actor.
+# Later use this as a feature in the dataset.
+# Calculate actor frequencies
+actor_frequency = merged_df['cast'].explode().value_counts().to_dict()
+
+# Calculate average revenue and rating for each actor
+actor_avg_revenue = merged_df.explode('cast').groupby('cast')['revenue'].mean().to_dict()
+actor_avg_rating = merged_df.explode('cast').groupby('cast')['vote_average'].mean().to_dict()
+
+# Normalize the metrics
+def normalize_metric(metric_dict):
+    max_val = max(metric_dict.values())
+    min_val = min(metric_dict.values())
+    return {actor: (value-min_val)/(max_val-min_val) for actor, value in metric_dict.items()}
+
+normalized_frequency = normalize_metric(actor_frequency)
+normalized_avg_revenue = normalize_metric(actor_avg_revenue)
+normalized_avg_rating = normalize_metric(actor_avg_rating)
+
+# Calculate Star Power for each actor
+star_power = {}
+for actor in normalized_frequency.keys():
+    star_power[actor] = (0.5 * normalized_frequency[actor]) + (0.3 * normalized_avg_revenue.get(actor, 0)) + (0.2 * normalized_avg_rating.get(actor, 0))
+
+# Integrate Star Power into main dataframe
+merged_df['movie_star_power'] = merged_df['cast'].apply(lambda x: sum([star_power.get(actor, 0) for actor in x]))
+
+# Making a cool recommendation system for users based on star power
+# Genre need to be one-hot encoded.
+merged_df['genres'] = merged_df['genres'].apply(lambda x: [i['name'] for i in eval(str(x))] if isinstance(x, str) else x)
+vectorizer = CountVectorizer(tokenizer=lambda doc: doc, lowercase=False)
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+genre_ohe = vectorizer.fit_transform(merged_df['genres']).toarray()
+
+# Convert the one-hot encoded array into a DataFrame, concatenate it with merged_df:
+genre_df = pd.DataFrame(genre_ohe, columns=vectorizer.get_feature_names_out().tolist())
+merged_df = pd.concat([merged_df, genre_df.add_prefix('genre_')], axis=1)
+
+# Let's combine 'Star Power' and genre features for similarity computation
+features = merged_df[['movie_star_power'] + list(merged_df.columns[merged_df.columns.str.contains('genre_')])]
+
+# Standardize the features
+scaler = StandardScaler()
+features_scaled = scaler.fit_transform(features)
+
+# Compute cosine similarity
+similarity_matrix = cosine_similarity(features_scaled)
+
+## Using the movie_star_power similarity matrix to define the recommendation function.
+# takes a movie title as input and returns a list of movies most similar to it
+def recommend_movie(title, num_recommendations=5):
+    # Get the index of the movie from its title
+    idx = merged_df[merged_df['title_x'] == title].index[0]
+
+    # Get the pairwise similarity scores
+    scores = list(enumerate(similarity_matrix[idx]))
+
+    # Sort the movies based on similarity scores
+    scores_sorted = sorted(scores, key=lambda x: x[1], reverse=True)
+
+    # Get the scores of the top n most similar movies (excluding itself)
+    top_movies_idx = [i[0] for i in scores_sorted[1:num_recommendations+1]]
+
+    # Return the top n most similar movie titles
+    return merged_df['title_x'].iloc[top_movies_idx]
+
+recommendations = recommend_movie("Inception")
+print(recommendations)
+
+# More transpatent use of the star_power feature
+# Where user can decide how much the stat_power should influence the recommendation.
+def recommend_movie_weighted(title, star_power_weight, num_recommendations=5):
+    idx = merged_df[merged_df['title_x'] == title].index[0]
+
+    # Modifying the similarity scores based on star_power_weight
+    weighted_scores = [(i, score * (1 + merged_df['movie_star_power'].iloc[i] * star_power_weight)) for i, score in enumerate(similarity_matrix[idx])]
+
+    # Sort the movies based on the weighted similarity scores
+    scores_sorted = sorted(weighted_scores, key=lambda x: x[1], reverse=True)
+
+    # Get the scores of the top n most similar movies (excluding itself)
+    top_movies_idx = [i[0] for i in scores_sorted[1:num_recommendations+1]]
+
+    # Return the top n most similar movie titles
+    return merged_df['title_x'].iloc[top_movies_idx]
+
+# Allow user to influence the recommendation by star_power
+star_power_weight = float(input("Enter weight for star power influence (e.g., 0.5 for 50% more influence): "))
+weighted_recommendations = recommend_movie_weighted("Inception", star_power_weight)
+print(weighted_recommendations)
