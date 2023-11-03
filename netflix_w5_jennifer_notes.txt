@@ -1,0 +1,13 @@
+In the recommendation system I've designed, I utilize four distinct methods to curate film suggestions.
+
+First, my basic similarity function identifies movies similar to 'Inception' based on genre and keywords, ensuring thematic alignment. Next, I apply a weighted function that factors in star power, acknowledging the influence of well-known actors.
+
+Next, I apply a weighted function that factors in star power, acknowledging the draw of well-known actors.
+
+With the Apriori genre-based approach, I discern patterns in genre preferences, inferring that if someone enjoys 'Action', they might also appreciate 'Thriller'.
+
+Lastly, my enhanced function combines genre insights with star influence, as seen when suggesting movies in line with 'Die Hard'.
+
+Together, these strategies provide users with a personalized recommendation system.
+
+(2023-11-03 To add: a way to neatly visualise or compare the differences between the four methods).
