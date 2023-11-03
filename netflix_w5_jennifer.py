@@ -250,13 +250,16 @@ for _, row in rules.iterrows():
     genre_b = list(row['consequents'])[0]
 
     if genre_a not in associations:
-        associations[genre_a] = []
-    associations[genre_a].append(genre_b)
+        associations[genre_a] = set()
+    associations[genre_a].add(genre_b)
     
     # Two-way associations (optional)
     if genre_b not in associations:
-        associations[genre_b] = []
-    associations[genre_b].append(genre_a)
+        associations[genre_b] = set()
+    associations[genre_b].add(genre_a)
+
+# Convert sets back to lists for display
+associations = {k: list(v) for k, v in associations.items()}
 
 # Display the first few entries in the associations dictionary
 print({k: associations[k] for k in list(associations)[:5]})
