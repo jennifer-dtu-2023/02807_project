@@ -23,6 +23,7 @@ from mlxtend.frequent_patterns import fpgrowth
 from zipfile import ZipFile
 import warnings
 import os
+import ast
 
 
 # used csv files, linking it with their source zip files
@@ -223,27 +224,42 @@ movie_matrix = (movie_matrix > 0).astype(bool)
 
 # 4. Apply Apriori
 
-# Find frequent itemsets using the binary matrix
-frequent_itemsets = apriori(movie_matrix, min_support=0.1, max_len=2, use_colnames=True)
+# Convert the stringified lists to actual lists
+tmdb_movies['genres'] = tmdb_movies['genres'].apply(ast.literal_eval)
+# Extract genre names and convert them to a string separated by '|'
+tmdb_movies['genres'] = tmdb_movies['genres'].apply(lambda x: '|'.join([i['name'] for i in x]))
 
-# Generate association rules
-rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+# Create a one-hot encoded matrix for genres
+genres_df = tmdb_movies['genres'].str.get_dummies(sep='|')
+genres_df = genres_df.astype(bool)
+# Identify frequent genre combinations using Apriori
+frequent_genre_sets = apriori(genres_df, min_support=0.01, use_colnames=True)
 
-# Considering rules with high 'lift' and 'confidence', for simplicity.
-strong_rules = rules[(rules['lift'] > 1.2) & (rules['confidence'] > 0.5)]
+# If there are frequent sets, create association rules
+if not frequent_genre_sets.empty:
+    rules = association_rules(frequent_genre_sets, metric="lift", min_threshold=1)
+    print(rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']])
+else:
+    print("No frequent itemsets found")
 
 # Create the associations dictionary
 # Extract the associations from the rules
 associations = {}
-for index, rule in strong_rules.iterrows():
-    genre = list(rule['antecedents'])[0]
-    associated_genre = list(rule['consequents'])[0]
-    if genre not in associations:
-        associations[genre] = [associated_genre]
-    else:
-        associations[genre].append(associated_genre)
+for _, row in rules.iterrows():
+    genre_a = list(row['antecedents'])[0]
+    genre_b = list(row['consequents'])[0]
 
-# print(associations)
+    if genre_a not in associations:
+        associations[genre_a] = []
+    associations[genre_a].append(genre_b)
+    
+    # Two-way associations (optional)
+    if genre_b not in associations:
+        associations[genre_b] = []
+    associations[genre_b].append(genre_a)
+
+# Display the first few entries in the associations dictionary
+print({k: associations[k] for k in list(associations)[:5]})
 # each genre was associated with several other genres.
 # suggests strong patterns of co-watching. 
 
