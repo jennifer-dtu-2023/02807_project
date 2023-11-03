@@ -1,7 +1,7 @@
 Prepared the data to be a managable size for the Apriori algorithm:
 Sampled based on users with the highest levels of activity, rather than the popularity of the movies.
 - Considered the top 200 top users
-- Reduce the dimensions by filtering out movies rated by few users (let's assume threshold = 10 as an example)
+- Reduce the dimensions by filtering out movies rated by few users (let's assume threshold = 10 as an example, i.e. less than 10 users rated it).
 
 
 In the recommendation system I've designed, I utilize four distinct methods to curate film suggestions.
