@@ -1,3 +1,9 @@
+Prepared the data to be a managable size for the Apriori algorithm:
+Sampled based on users with the highest levels of activity, rather than the popularity of the movies.
+- Considered the top 200 top users
+- Reduce the dimensions by filtering out movies rated by few users (let's assume threshold = 10 as an example)
+
+
 In the recommendation system I've designed, I utilize four distinct methods to curate film suggestions.
 
 First, my basic similarity function identifies movies similar to 'Inception' based on genre and keywords, ensuring thematic alignment. Next, I apply a weighted function that factors in star power, acknowledging the influence of well-known actors.
