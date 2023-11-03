@@ -270,7 +270,8 @@ merged_df = pd.merge(tmdb_movies, credits, left_on='id', right_on='movie_id')
 print(merged_df.head()) 
 
 # Extract genre names into a list of dictionaries
-merged_df['genres'] = merged_df['genres'].apply(lambda x: [i['name'] for i in eval(x)])
+merged_df['genres'] = merged_df['genres'].apply(lambda x: x.split('|'))
+
 # checking the genre transformation
 print(merged_df['genres'].head())
 
