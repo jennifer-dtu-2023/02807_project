@@ -16,8 +16,7 @@ This project aims to demonstrate the application of computational tools for data
 | Banko, Marton Bendeguz       | s233659        | MSc.MEng. Computer Science Engineering             |
 | Fortuny I Zhan, Jennifer     | s230705        | MSc.MEng. Bioinformatics and Systems Biology       |
 | Mortensen, Ellen Winther     | s184313        | MSc.MEng. Business Analysis                        |
-| Trinh, Dung My Thi           | s204468        | MSc.MEng. [Please add the specific course name]   |
-| [Please add 5th person's name] | [Please add]  | [Please add the specific course name for 5th person]|
+| Trinh, Dung My Thi           | s204468        | MSc.MEng. Human-Centered Artificial Intelligence   |
 
 ## Project Progress
 - [12th October]: Project initiation and brainstorming session.
