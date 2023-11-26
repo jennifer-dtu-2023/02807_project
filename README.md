@@ -3,7 +3,7 @@
 ## Project Details
 - **Course**: Fall 2023 DTU: Computational Tools for Data Science Final Project
 - **Project Start Date**: Thursday, 12th of October, 2023.
-- **Project Submission Date**: (Estimated to be on the week of 17th of December)
+- **Project Submission Date**: Tuesday, 28th of November, 2023
 
 This project aims to demonstrate the application of computational tools for data science on a chosen problem. The challenge is to choose a problem that is technically demanding and relevant within the domain of data science. A comprehensive report detailing the problem, solution, and methodologies will accompany the final submission.
 
