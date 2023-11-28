@@ -16,7 +16,10 @@
 | Mortensen, Ellen Winther     | s184313        | MSc.MEng. Business Analysis                        |
 | Trinh, Dung My Thi           | s204468        | MSc.MEng. Human-Centered Artificial Intelligence   |
 
-## Data Source
-- **Dataset Name**: (Dataset)
-- **Source**: [Link or description of where the data is from]
+## Data Source(s)
+- [RISHIT JAVIA: Netflix Movie Rating Dataset](https://www.kaggle.com/datasets/rishitjavia/netflix-movie-rating-dataset?select=Netflix_Dataset_Rating.csv)
+- [THE MOVIE DATABASE (TMDB): TMDB 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata)
+
+## Install dependencies
+Install the required packages using `pip install -r requirements.txt` command from the root of the project.
 
